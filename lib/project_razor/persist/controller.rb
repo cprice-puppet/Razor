@@ -14,13 +14,25 @@ module ProjectRazor
         # copy config into instance
         @config = config
 
+
+        # TODO: we should tweak this so that the config file does the
+        #  mapping to the actual plugin class so that we don't need to use
+        #  a case statement here.
+        #
         # init correct database object
-        if (config.persist_mode = :mongo)
+        if (config.persist_mode == :mongo)
           logger.debug "Using Mongo plugin"
+
           @database = ProjectRazor::Persist::MongoPlugin.new
+          check_connection
+        elsif (config.persist_mode == :activerecord)
+          logger.debug "Using ActiveRecord plugin"
+
+          @database = ProjectRazor::Persist::ActiveRecordPlugin.new
           check_connection
         else
           logger.error "Invalid Database plugin(#{config.persist_mode})"
+          raise ProjectRazor::Error::Persist.new("Invalid Database plugin (#{config.persist_mode})")
         end
       end
 

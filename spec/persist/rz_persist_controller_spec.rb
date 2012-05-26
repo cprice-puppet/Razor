@@ -13,7 +13,8 @@ RSpec.configure do |config|
 end
 
 #backends = [:mongo, :activerecord]
-backends = [:mongo]
+#backends = [:mongo]
+backends = [:activerecord]
 backend_plugin_classes = {
     :mongo => ProjectRazor::Persist::MongoPlugin,
     :activerecord => ProjectRazor::Persist::ActiveRecordPlugin,

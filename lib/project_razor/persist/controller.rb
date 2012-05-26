@@ -23,6 +23,8 @@ module ProjectRazor
         if (config.persist_mode == :mongo)
           logger.debug "Using Mongo plugin"
 
+          #puts "CREATING MONGO PLUGIN!!!"
+          #puts caller.join("\n")
           @database = ProjectRazor::Persist::MongoPlugin.new
           check_connection
         elsif (config.persist_mode == :activerecord)
@@ -55,6 +57,7 @@ module ProjectRazor
       # @return [true, false]
       def check_connection
         logger.debug "Checking connection (#{is_connected?})"
+        #puts "Check_connection"
         is_connected? || connect_database
         # return connection status
         is_connected?

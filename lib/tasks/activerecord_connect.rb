@@ -5,6 +5,7 @@ namespace :activerecord do
         env = ENV['RACK_ENV'] || ENV['RAILS_ENV'] || 'production'
         #dbconfig = YAML::load(File.open activerecord_db_config)[env]
         #ActiveRecord::Base.configurations['razor'] = dbconfig
+        # TODO: this needs to go in a config file
         ActiveRecord::Base.configurations['razor'] = {
             'adapter' => 'postgresql',
             'database' => 'razor',

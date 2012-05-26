@@ -16,15 +16,15 @@ module ProjectRazor
 
     # Initializes our {ProjectRazor::Data} object
     #  Attempts to load {ProjectRazor::Configuration} and initialize {ProjectRazor::Persist::Controller}
-    def initialize
+    def initialize(persist_ctrl = nil)
       logger.debug "Initializing object"
       load_config
-      setup_persist
+      @persist_ctrl = persist_ctrl || setup_persist
     end
 
     def check_init
       load_config
-      setup_persist if !@persist_ctrl || !@persist_ctrl.check_connection
+      @persist_ctrl = setup_persist if !@persist_ctrl || !@persist_ctrl.check_connection
     end
 
     def config
@@ -172,7 +172,7 @@ module ProjectRazor
     # @return [ProjectRazor::Persist::Controller, ProjectRazor]
     def setup_persist
       logger.debug "Persist controller init"
-      @persist_ctrl = ProjectRazor::Persist::Controller.new(config)
+      ProjectRazor::Persist::Controller.new(config)
     end
 
     # Attempts to load the './conf/razor_server.conf' YAML file into @config

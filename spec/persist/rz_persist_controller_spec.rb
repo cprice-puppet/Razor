@@ -3,6 +3,7 @@ require "project_razor"
 require "rspec"
 require "rz_rspec_matchers"
 require "uuid"
+require 'mocha'
 
 # true == will remove all records from collection when done
 # false == will leave them for debugging
@@ -12,9 +13,9 @@ RSpec.configure do |config|
   config.include(RZRSpecMatchers)
 end
 
-#backends = [:mongo, :activerecord]
+backends = [:mongo, :activerecord]
 #backends = [:mongo]
-backends = [:activerecord]
+#backends = [:activerecord]
 backend_plugin_classes = {
     :mongo => ProjectRazor::Persist::MongoPlugin,
     :activerecord => ProjectRazor::Persist::ActiveRecordPlugin,
@@ -27,10 +28,13 @@ backends.each do |backend|
         @config = ProjectRazor::Config::Server.new
         @config.persist_mode = backend
         @persist = ProjectRazor::Persist::Controller.new(@config)
+        @data = ProjectRazor::Data.send(:new, @persist)
+        @data = ProjectRazor::Data.stubs(:instance).returns(@data)
       end
 
       after(:all) do
         @persist.teardown
+
       end
 
       describe ".Initialize" do
@@ -112,7 +116,11 @@ backends.each do |backend|
           model_hash_array.should keys_with_values_count_equals({"@uuid" => @model1.uuid },1)
         end
         it "should see the last update to a Model in the collection and version number should be 3" do
+          #puts "ABOUT TO CALL OBJECT_HASH_GET_ALL"
           model_hash_array = @persist.object_hash_get_all(:model)
+          #puts "PRINTING THE MODEL HASH ARRAY"
+          #require 'pp'
+          #pp model_hash_array
           model_hash_array.should keys_with_values_count_equals({"@uuid" => @model1.uuid , "@name" => "rspec_modelname03", "@version" => 3},1)
         end
         it "should return a array of Models from the Model collection without duplicates" do

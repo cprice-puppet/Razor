@@ -62,6 +62,8 @@ module ProjectRazor
       # @return [Array]
       def object_doc_get_all(collection_name)
         logger.debug "Get all documents from collection (#{collection_name})"
+        #puts "Get all documents from collection (#{collection_name})"
+        #puts caller.join("\n")
         unique_object_doc_array = []  # [Array] to hold new/unique docs
         old_object_doc_array = []  # [Array] to hold old/duplicate docs
 

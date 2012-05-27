@@ -13,9 +13,9 @@ RSpec.configure do |config|
   config.include(RZRSpecMatchers)
 end
 
-backends = [:mongo, :activerecord]
+#backends = [:mongo, :activerecord]
 #backends = [:mongo]
-#backends = [:activerecord]
+backends = [:activerecord]
 backend_plugin_classes = {
     :mongo => ProjectRazor::Persist::MongoPlugin,
     :activerecord => ProjectRazor::Persist::ActiveRecordPlugin,

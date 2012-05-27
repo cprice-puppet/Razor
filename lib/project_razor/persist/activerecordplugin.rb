@@ -1,4 +1,7 @@
 require 'active_record'
+require 'project_razor/persist/activerecord/db/model/collection'
+require 'project_razor/persist/activerecord/db/model/record'
+require 'project_razor/persist/activerecord/db/model/property'
 
 module ProjectRazor
   module Persist
@@ -7,7 +10,7 @@ module ProjectRazor
 
       def initialize()
         #puts "ACTIVERECORDPLUGIN.initialize"
-        @hacky_temp_collection_map = {}
+        #@hacky_temp_collection_map = {}
       end
 
       # Establishes ActiveRecord db connection
@@ -63,12 +66,52 @@ module ProjectRazor
         #require 'pp'
         #pp object_doc
         coll = get_collection(collection_name)
-        next_version = 1
-        if (coll.has_key?(object_doc["@uuid"]))
-          next_version = coll[object_doc["@uuid"]]["@version"] + 1
+
+
+        record = ActiveRecordModel::Record.where(:uid => object_doc["@uuid"]).first
+
+
+        #coll_hash = get_collection_hash(coll)
+        #next_version = 1
+        #if (coll_hash.has_key?(object_doc["@uuid"]))
+        #  next_version = coll_hash[object_doc["@uuid"]]["@version"] + 1
+        #end
+        #object_doc["@version"] = next_version
+        #coll_hash[object_doc["@uuid"]] = object_doc
+
+        if (record.nil?)
+          record = ActiveRecordModel::Record.create(
+              :uid => object_doc["@uuid"],
+              :coll_id => coll.id,
+              :version => 1,
+          )
+        else
+          record = ActiveRecordModel::Record.update(
+              record.id,
+              :uid => object_doc["@uuid"],
+              :coll_id => coll.id,
+              :version => record.version + 1,
+          )
         end
-        object_doc["@version"] = next_version
-        get_collection(collection_name)[object_doc["@uuid"]] = object_doc
+
+        # TODO: this is probably not be the most efficient way to do this; if
+        #  some of the properties haven't changed then we don't really need to
+        #  delete and recreate them, but I'm just trying to get something working.
+        ActiveRecordModel::Property.delete_all(:record_id => record.id)
+
+        object_doc.each_pair do |key, value|
+          next if ["@uuid", "@version"].include?(key)
+          # TODO: need to serialize the value in case it is a hash or something
+          ActiveRecordModel::Property.create(
+              :record_id => record.id,
+              :name => key,
+              :value => value,
+          )
+        end
+
+
+
+
         #puts "COLLECTION SIZE IS NOW: '#{get_collection(collection_name).size}'"
         return object_doc
         ## Add a timestamp key
@@ -85,7 +128,29 @@ module ProjectRazor
       def object_doc_get_all(collection_name)
         #logger.debug "Get all documents from collection (#{collection_name})"
         #puts "Get all documents from collection (#{collection_name})"
-        get_collection(collection_name).values
+        coll = get_collection(collection_name)
+        #get_collection_hash(coll).values
+
+        # TODO: not efficient; should use a join so this would
+        #  only be one query.  Just trying to get something working.
+
+        results = []
+        ActiveRecordModel::Record.where(:coll_id => coll.id).each do |record|
+          result = {
+              "@uuid" => record.uid,
+              "@version" => record.version,
+          }
+          ActiveRecordModel::Property.where(:record_id => record.id).each do |prop|
+            result[prop.name] = prop.value
+          end
+
+          results << result
+        end
+
+        return results
+
+
+
         #unique_object_doc_array = []  # [Array] to hold new/unique docs
         #old_object_doc_array = []  # [Array] to hold old/duplicate docs
         #
@@ -133,7 +198,13 @@ module ProjectRazor
         #  end
         #end
         #true
-        get_collection(collection_name).delete(object_doc['@uuid'])
+        coll = get_collection(collection_name)
+        #get_collection_hash(coll).delete(object_doc['@uuid'])
+
+        record = ActiveRecordModel::Record.where(:uid => object_doc["@uuid"]).first
+        ActiveRecordModel::Property.delete_all(:record_id => record.id)
+        ActiveRecordModel::Record.delete(record.id)
+
         return true
       end
 
@@ -142,12 +213,25 @@ module ProjectRazor
       #### TODO: this is a temporary hack, will go away once we actually
       # start persisting all of this stuff.
       def get_collection(collection_name)
-        unless @hacky_temp_collection_map.has_key?(collection_name)
-          #puts "Creating new entry in hacky temp collection (#{collection_name}"
-          @hacky_temp_collection_map[collection_name] = {}
-        end
-        @hacky_temp_collection_map[collection_name]
+        # TODO: inefficient, should cache these results
+        coll = ActiveRecordModel::Collection.where("name = ?", collection_name).first_or_create(:name => collection_name)
+        #if (coll.empty?)
+        #  pp "NO COLLECTION"
+        #  ActiveRecordModel::Collection.save
+        #else
+        #  require 'pp'
+        #  pp coll
+        #end
+        return coll
       end
+
+      #def get_collection_hash(coll)
+      #  unless @hacky_temp_collection_map.has_key?(coll.name)
+      #    #puts "Creating new entry in hacky temp collection (#{collection_name}"
+      #    @hacky_temp_collection_map[coll.name] = {}
+      #  end
+      #  @hacky_temp_collection_map[coll.name]
+      #end
 
 
     end

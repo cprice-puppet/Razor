@@ -116,21 +116,32 @@ backends.each do |backend|
           model_hash_array.should keys_with_values_count_equals({"@uuid" => @model1.uuid },1)
         end
         it "should see the last update to a Model in the collection and version number should be 3" do
-          #puts "ABOUT TO CALL OBJECT_HASH_GET_ALL"
           model_hash_array = @persist.object_hash_get_all(:model)
-          #puts "PRINTING THE MODEL HASH ARRAY"
-          #require 'pp'
-          #pp model_hash_array
           model_hash_array.should keys_with_values_count_equals({"@uuid" => @model1.uuid , "@name" => "rspec_modelname03", "@version" => 3},1)
         end
         it "should return a array of Models from the Model collection without duplicates" do
           model_hash_array = @persist.object_hash_get_all(:model)
           model_hash_array.should keys_with_values_count_equals({"@uuid" => @model1.uuid },1)
         end
+
+        it "should be able to fetch a Model by uid" do
+          model_hash = @persist.object_hash_get_by_uuid(@model3.to_hash, :model)
+          model_hash.should have_entries(
+              "@uuid" => @model1.uuid,
+              "@values_hash" => {"a"=>"1000"}
+          )
+        end
+
         it "should remove a Model from the Model collection" do
           @persist.object_hash_remove(@model3.to_hash, :model).should == true # should get positive return
           model_hash_array = @persist.object_hash_get_all(:model)
           model_hash_array.should keys_with_values_count_equals({"@uuid" => @model1.uuid },0)
+        end
+
+        it "should be able to remove all Models from the collection" do
+          @persist.object_hash_remove_all(:model)
+          model_hash_array = @persist.object_hash_get_all(:model)
+          model_hash_array.length.should == 0
         end
       end
 

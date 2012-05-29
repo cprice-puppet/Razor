@@ -47,4 +47,25 @@ module RZRSpecMatchers
     KeysWithValuesCountEquals.new(key_value_hash, count)
   end
 
+
+  class HashEntryMatcher
+    def initialize(hash_to_match)
+      @hash_to_match = hash_to_match
+    end
+
+    def matches?(other_hash)
+      @hash_to_match.keys.each do |key|
+        other_hash[key].should == @hash_to_match[key]
+      end
+      true
+    end
+
+    def failure_message()
+      "Expected hash to contain the following key/value pairs: '#{@hash_to_match}'"
+    end
+  end
+
+  def have_entries(hash_to_match)
+    HashEntryMatcher.new(hash_to_match)
+  end
 end
